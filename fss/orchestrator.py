@@ -51,7 +51,7 @@ class Orchestrator(object):
                 g.output_q, 
                 log_q)
 
-        # Create the filter.
+        # Create the executor.
 
         e = fss.workers.executor.ExecutorController(
                 self.__fq_handler_cls_name,
@@ -74,7 +74,7 @@ class Orchestrator(object):
             if min(states) >= fss.constants.PCS_STOPPED:
                 break
 
-            
+# TODO(dustin): Check for any of the components not being alive.
 
             # Forward log messages to local log-handler.
 
