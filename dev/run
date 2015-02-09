@@ -6,6 +6,7 @@ import sys
 _APP_PATH = os.path.abspath(os.path.join(os.path.dirname(__file__), '..'))
 sys.path.insert(0, _APP_PATH)
 
+import fss.constants
 import fss.config.log
 import fss.orchestrator
 
@@ -13,6 +14,13 @@ import fss.orchestrator
 path = os.path.expanduser('/Volumes/tower/images')
 
 filter_rules = [
+#    (fss.constants.FT_FILE, fss.constants.FILTER_INCLUDE, '*.MP4'),
+
+# TODO(dustin): This isn't as functional as we would've hoped. As this doesn't 
+#               affect which trees are actually scanned, it's useless. We need 
+#               to be able to tell the generator to skip trees that aren't 
+#               relevant.
+    (fss.constants.FT_DIR, fss.constants.FILTER_INCLUDE, '*234*'),
 ]
 
 fq_handler_class_name = 'package.module.Class'

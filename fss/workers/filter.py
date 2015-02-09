@@ -3,6 +3,7 @@ import time
 import logging
 import queue
 import os.path
+import fnmatch
 
 import fss.constants
 import fss.config.workers
@@ -22,18 +23,64 @@ class FilterWorker(fss.workers.worker_base.WorkerBase):
 
         self.log(logging.INFO, "Creating filter.")
 
-        self.__filter_rules = filter_rules
+        # We expect this to be a listof 3-tuples: 
+        #
+        #     (entry-type, filter-type, pattern)
+        
+        self.__filter_rules = {
+            fss.constants.FT_DIR: {
+                fss.constants.FILTER_INCLUDE: [],
+                fss.constants.FILTER_EXCLUDE: [],
+            },
+            fss.constants.FT_FILE: {
+                fss.constants.FILTER_INCLUDE: [],
+                fss.constants.FILTER_EXCLUDE: [],
+            },
+        }
+
+        for (entry_type, filter_type, pattern) in filter_rules:
+            self.__filter_rules[entry_type][filter_type].append(pattern)
+
+        # If an include filter was given for DIRECTORIES, but no exclude 
+        # filter, exclude everything but what hits on the include.
+
+        rules = self.__filter_rules[fss.constants.FT_DIR]
+        if rules[fss.constants.FILTER_INCLUDE] and \
+           not rules[fss.constants.FILTER_EXCLUDE]:
+            rules[fss.constants.FILTER_EXCLUDE].append('*')
+
+        # If an include filter was given for FILES, but no exclude filter, 
+        # exclude everything but what hits on the include.
+
+        rules = self.__filter_rules[fss.constants.FT_FILE]
+        if rules[fss.constants.FILTER_INCLUDE] and \
+           not rules[fss.constants.FILTER_EXCLUDE]:
+            rules[fss.constants.FILTER_EXCLUDE].append('*')
+
+    def __check_to_permit(self, entry_type, entry_filename):
+        """Applying the filter rules."""
+
+        rules = self.__filter_rules[entry_type]
+
+        # Should explicitly include?
+        for pattern in rules[fss.constants.FILTER_INCLUDE]:
+            if fnmatch.fnmatch(entry_filename, pattern):
+                return True
+
+        # Should explicitly exclude?
+        for pattern in rules[fss.constants.FILTER_EXCLUDE]:
+            if fnmatch.fnmatch(entry_filename, pattern):
+                return False
+
+        # Implicitly include.
+        return True
 
     def process_item(self, item):
         (entry_type, entry_path) = item
 
-# TODO(dustin): Finish this.
-        # fss.constants.FT_DIR
-        # fss.constants.FT_FILE
-
-# TODO(dustin): 
-
-        self.push_to_output((entry_type, entry_path))
+        entry_filename = os.path.basename(entry_path)
+        if self.__check_to_permit(entry_type, entry_filename) is True:
+            self.push_to_output((entry_type, entry_path))
 
     def get_upstream_component_name(self):
         return fss.constants.PC_GENERATOR

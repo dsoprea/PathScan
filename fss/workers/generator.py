@@ -21,7 +21,8 @@ class GeneratorWorker(fss.workers.worker_base.WorkerBase):
         super(GeneratorWorker, self).__init__(*args)
 
         _LOGGER.info("Creating generator.")
-
+# TODO(dustin): We need to be able to skip subtrees if not relevant. We need to 
+#               receive signals from the filter worker for this.
     def process_item(self, path):
         for filename in os.listdir(path):
             if self.check_quit() is True:

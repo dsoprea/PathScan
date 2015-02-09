@@ -27,6 +27,9 @@ class ExecutorWorker(fss.workers.worker_base.WorkerBase):
     def process_item(self, item):
         (entry_type, entry_path) = item
 
+        if entry_type == fss.constants.FT_FILE:
+            print("EXECUTOR: %s" % (entry_path,))
+
 # TODO(dustin): Finish this.
         # fss.constants.FT_DIR
         # fss.constants.FT_FILE
