@@ -44,7 +44,7 @@ class ExecutorWorker(fss.workers.worker_base.WorkerBase):
         return fss.constants.PC_EXECUTOR
 
     def get_upstream_component_name(self):
-        return fss.constants.PC_FILTER
+        return fss.constants.PC_GENERATOR
 
 
 class ExecutorController(fss.workers.controller_base.ControllerBase):
@@ -75,7 +75,7 @@ class ExecutorController(fss.workers.controller_base.ControllerBase):
 
     @property
     def output_queue_size(self):
-        return fss.config.workers.FILTER_MAX_OUTPUT_QUEUE_SIZE
+        return fss.config.workers.EXECUTOR_MAX_OUTPUT_QUEUE_SIZE
 
 def _boot(fq_handler_cls_name, pipeline_state, input_q, output_q, log_q, quit_ev):
     _LOGGER.info("Booting executor worker.")

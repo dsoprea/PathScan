@@ -82,6 +82,17 @@ class FilterWorker(fss.workers.worker_base.WorkerBase):
         if self.__check_to_permit(entry_type, entry_filename) is True:
             self.push_to_output((entry_type, entry_path))
 
+# TODO(dustin): We need to send a skip signal if we're a directory and we 
+#               shouldn't be scanned.
+#
+#               This means that we'll have to merge the generator and the 
+#               filter since the works run in parallel (by the time we 
+#               encounter an entry we'd like to skip, the generator is 
+#               already far below us or far beyond us).
+#
+#        elif entry_type == fss.constants.FT_DIR:
+#            raise NotImplementedError()
+
     def get_upstream_component_name(self):
         return fss.constants.PC_GENERATOR
 

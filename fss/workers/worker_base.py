@@ -99,8 +99,8 @@ class WorkerBase(object):
                "Can not change to 'finished' state from unsupported " \
                "state: (" + str(existing_state) + ")"
 
-        assert self.__push_count > 0, \
-               "Finish-count must be greater than zero."
+#        assert self.__push_count > 0, \
+#               "Finish-count must be greater than zero."
 
         self.__set_data('count', self.__push_count)
         self.__set_state(fss.constants.PCS_FINISHED)
@@ -131,6 +131,7 @@ class WorkerBase(object):
                             upstream_component_name, 
                             'count')
 
+# TODO(dustin): This doesn't work consistently. The need_count fluctuates.
             if self.__read_count == need_count:
 
                 # Automatically mark this component has finished when 

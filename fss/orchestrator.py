@@ -7,7 +7,6 @@ import threading
 import fss.config.general
 import fss.config.workers
 import fss.workers.generator
-import fss.workers.filter
 import fss.workers.executor
 
 _LOGGER = logging.getLogger(__name__)
@@ -29,7 +28,6 @@ class Orchestrator(object):
         m = multiprocessing.Manager()
         pipeline_state = m.dict({
                                 'running_' + fss.constants.PC_GENERATOR: fss.constants.PCS_INITIAL,
-                                'running_' + fss.constants.PC_FILTER: fss.constants.PCS_INITIAL,
                                 'running_' + fss.constants.PC_EXECUTOR: fss.constants.PCS_INITIAL,
                             })
 
@@ -39,16 +37,9 @@ class Orchestrator(object):
         generator_input_q.put(self.__path)
 
         g = fss.workers.generator.GeneratorController(
-                pipeline_state, 
-                generator_input_q,
-                log_q)
-
-        # Create the filter.
-
-        f = fss.workers.filter.FilterController(
                 self.__filter_rules,
                 pipeline_state, 
-                g.output_q, 
+                generator_input_q,
                 log_q)
 
         # Create the executor.
@@ -56,13 +47,12 @@ class Orchestrator(object):
         e = fss.workers.executor.ExecutorController(
                 self.__fq_handler_cls_name,
                 pipeline_state, 
-                f.output_q, 
+                g.output_q, 
                 log_q)
 
         # Start the pipeline.
 
         g.start()
-        f.start()
         e.start()
 
         # Start foreground loop.
@@ -89,5 +79,4 @@ class Orchestrator(object):
         _LOGGER.info("Terminating workers.")
 
         e.stop()
-        f.stop()
         g.stop()
