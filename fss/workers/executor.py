@@ -17,24 +17,21 @@ class ExecutorWorker(fss.workers.worker_base.WorkerBase):
     file-paths.
     """
 
-    def __init__(self, fq_handler_cls_name, *args):
+    def __init__(self, file_handler_cb, *args):
         super(ExecutorWorker, self).__init__(*args)
 
         self.log(logging.INFO, "Creating executor.")
 
-        self.__fq_handler_cls_name = fq_handler_cls_name
+        self.__file_handler_cb = file_handler_cb
 
     def process_item(self, item):
         (entry_type, entry_path) = item
 
+# TODO(dustin): We'd like to be able to forward the directories, too (in order 
+#               to be a general-purpose directory-recursion tool).
+
         if entry_type == fss.constants.FT_FILE:
-            print("EXECUTOR: %s" % (entry_path,))
-
-# TODO(dustin): Finish this.
-        # fss.constants.FT_DIR
-        # fss.constants.FT_FILE
-
-#        self.push_to_output((entry_type, entry_path))
+            self.__file_handler_cb(entry_path)
 
     def post_loop_hook(self):
         #self.set_finished()

@@ -30,7 +30,12 @@ filter_rules = [
     (fss.constants.FT_FILE, fss.constants.FILTER_EXCLUDE, '*.py'),
 ]
 
-fq_handler_class_name = 'package.module.Class'
+def file_handler(entry_filepath):
+    print("FOUND: [%s]" % (entry_filepath,))
 
-o = fss.orchestrator.Orchestrator(path, filter_rules, fq_handler_class_name)
+print("Before.")
+
+o = fss.orchestrator.Orchestrator(path, filter_rules, file_handler)
 o.run()
+
+print("After.")
