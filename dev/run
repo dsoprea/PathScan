@@ -33,9 +33,9 @@ filter_rules = [
 def file_handler(entry_filepath):
     print("FOUND: [%s]" % (entry_filepath,))
 
-print("Before.")
+print("Starting.")
 
 o = fss.orchestrator.Orchestrator(path, filter_rules, file_handler)
 o.run()
 
-print("After.")
+print("Stopping.")
