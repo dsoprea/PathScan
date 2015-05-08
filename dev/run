@@ -13,15 +13,21 @@ import fss.config.log
 import fss.orchestrator
 
 #path = os.path.expanduser('~/Documents')
-path = os.path.expanduser('/Volumes/tower/images')
+#path = os.path.expanduser('/Volumes/tower/images')
+path = os.path.expanduser('~/development/python')
 
 filter_rules = [
 #    (fss.constants.FT_FILE, fss.constants.FILTER_INCLUDE, '*.MP4'),
 
-    (fss.constants.FT_DIR, fss.constants.FILTER_INCLUDE, 'main'),
-    (fss.constants.FT_DIR, fss.constants.FILTER_INCLUDE, '2014'),
 #    (fss.constants.FT_DIR, fss.constants.FILTER_INCLUDE, '*234*'),
-    (fss.constants.FT_DIR, fss.constants.FILTER_INCLUDE, '*123*'),
+
+#    (fss.constants.FT_DIR, fss.constants.FILTER_INCLUDE, 'main'),
+#    (fss.constants.FT_DIR, fss.constants.FILTER_INCLUDE, '2014'),
+#    (fss.constants.FT_DIR, fss.constants.FILTER_INCLUDE, '*123*'),
+
+    (fss.constants.FT_DIR, fss.constants.FILTER_INCLUDE, 'deployment'),
+    (fss.constants.FT_DIR, fss.constants.FILTER_INCLUDE, 'deploy_pipe'),
+    (fss.constants.FT_FILE, fss.constants.FILTER_EXCLUDE, '*.py'),
 ]
 
 fq_handler_class_name = 'package.module.Class'

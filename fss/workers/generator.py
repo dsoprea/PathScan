@@ -151,6 +151,10 @@ class GeneratorWorker(fss.workers.worker_base.WorkerBase):
     def get_component_name(self):
         return fss.constants.PC_GENERATOR
 
+    @property
+    def terminate_on_idle(self):
+        return True
+
 
 class GeneratorController(fss.workers.controller_base.ControllerBase):
     def __init__(self, filter_rules_raw, *args, **kwargs):

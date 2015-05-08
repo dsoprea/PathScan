@@ -7,6 +7,10 @@ import fss.config.workers
 _LOGGER = logging.getLogger(__name__)
 
 
+class _TerminationMessage(object):
+    pass
+
+
 class WorkerBase(object):
     def __init__(self, pipeline_state, input_q, output_q, log_q, quit_ev):
         self.__pipeline_state = pipeline_state
@@ -108,67 +112,15 @@ class WorkerBase(object):
     def __handle_queue_idle(self):
         component_name = self.get_component_name()
 
-        # If we're starved and the upstream component has stopped, 
-        # terminate.
-        try:
-            upstream_component_name = self.get_upstream_component_name()
-        except NotImplementedError:
-            # No upstream component is defined.
-
-            self.log(
-                logging.INFO, 
-                "Component [%s] is idle and there's no upstream "
-                "component. Stopping.",
-                component_name)
+        if self.terminate_on_idle is True:
+            _LOGGER.debug("Component [%s] is idle and was told to quit when "
+                          "idle.", component_name)
 
             return False
 
-        # An upstream component is defined.
-
-        upstream_state = self.__get_state(upstream_component_name)
-        if upstream_state == fss.constants.PCS_STOPPED:
-            need_count = self.__get_data(
-                            upstream_component_name, 
-                            'count')
-
-# TODO(dustin): This doesn't work consistently. The need_count fluctuates.
-            if self.__read_count == need_count:
-
-                # Automatically mark this component has finished when 
-                # the previous component has stopped, and we've 
-                # processed as many items as we're queued.
-#                self.set_finished()
-
-                self.log(
-                    logging.INFO, 
-                    "Component [%s] is idle, upstream component [%s] has "
-                    "ended, and we have consumed all items (%d). Stopping.",
-                    component_name, 
-                    upstream_component_name,
-                    self.__read_count)
-
-                return False
-            elif self.__read_count > need_count:
-                self.log(
-                    logging.ERROR,
-                    "Component [%s] has received more items than " \
-                    "were pushed by upstream [%s]: (%d) > (%d)",
-                    component_name,
-                    upstream_component_name,
-                    self.__read_count,
-                    need_count)
-            else:
-                self.log(
-                    logging.DEBUG, 
-                    "Upstream component [%s] has ended, but " \
-                    "downstream component [%s] is not caught up, " \
-                    "yet: have (%d) != need (%d)",
-                    upstream_component_name,
-                    component_name,
-                    self.__read_count,
-                    need_count)
-
         if self.check_quit() is True:
+            _LOGGER.debug("Component [%s] saw a quit-signal.", component_name)
+
             return False
 
         if self.loop_idle_hook() is False:
@@ -196,10 +148,21 @@ class WorkerBase(object):
             try:
                 item = self.input_q.get(block=False)
             except queue.Empty:
+                _LOGGER.debug("Input-queue is empty: [%s]", component_name)
+
                 if self.__handle_queue_idle() is False:
                     break
 
                 continue
+
+            if issubclass(item.__class__, _TerminationMessage) is True:
+                upstream_component_name = self.get_upstream_component_name()
+
+                _LOGGER.info("Component [%s] received termination message"
+                             "from upstream component [%s].", 
+                             component_name, upstream_component_name)
+
+                break
 
             self.__read_count += 1
 #            self.log(logging.INFO, "Component [%s] new read-count: (%d) -- %s", component_name, self.__read_count, item)
@@ -233,6 +196,8 @@ class WorkerBase(object):
 
         self.wait_for_log_empty()
 
+        self.__output_q.put(_TerminationMessage())
+
         self.__set_state(fss.constants.PCS_STOPPED)
 
     @property
@@ -255,6 +220,10 @@ class WorkerBase(object):
     def tick_count(self):
 # TODO(dustin): Rename the member-variable to "__tick_count".
         return self.__tick
+
+    @property
+    def terminate_on_idle(self):
+        return False
 
     def loop_idle_hook(self):
         pass
