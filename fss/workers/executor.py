@@ -27,11 +27,7 @@ class ExecutorWorker(fss.workers.worker_base.WorkerBase):
     def process_item(self, item):
         (entry_type, entry_path) = item
 
-# TODO(dustin): We'd like to be able to forward the directories, too (in order 
-#               to be a general-purpose directory-recursion tool).
-
-        if entry_type == fss.constants.FT_FILE:
-            self.__file_handler_cb(entry_path)
+        self.__file_handler_cb(entry_type, entry_path)
 
     def post_loop_hook(self):
         #self.set_finished()

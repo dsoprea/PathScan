@@ -30,8 +30,8 @@ filter_rules = [
     (fss.constants.FT_FILE, fss.constants.FILTER_EXCLUDE, '*.py'),
 ]
 
-def file_handler(entry_filepath):
-    print("FOUND: [%s]" % (entry_filepath,))
+def file_handler(entry_type, entry_filepath):
+    print("FOUND: [%s] [%s]" % (entry_type, entry_filepath))
 
 print("Starting.")
 

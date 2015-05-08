@@ -10,6 +10,9 @@ _LOGGER = logging.getLogger(__name__)
 class _TerminationMessage(object):
     pass
 
+# TODO(dustin): We might want to improve our tick-countting... Maybe have 
+#               separate total-tick and hit-tick counters.
+
 
 class WorkerBase(object):
     def __init__(self, pipeline_state, input_q, output_q, log_q, quit_ev):
@@ -103,9 +106,6 @@ class WorkerBase(object):
                "Can not change to 'finished' state from unsupported " \
                "state: (" + str(existing_state) + ")"
 
-#        assert self.__push_count > 0, \
-#               "Finish-count must be greater than zero."
-
         self.__set_data('count', self.__push_count)
         self.__set_state(fss.constants.PCS_FINISHED)
 
@@ -165,7 +165,6 @@ class WorkerBase(object):
                 break
 
             self.__read_count += 1
-#            self.log(logging.INFO, "Component [%s] new read-count: (%d) -- %s", component_name, self.__read_count, item)
 
             if self.check_quit() is True:
                 break

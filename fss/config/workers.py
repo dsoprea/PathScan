@@ -14,6 +14,5 @@ SHUTDOWN_LOG_DEPLETE_CHECK_INTERVAL_S = 1
 
 COMPONENTS = [
     fss.constants.PC_GENERATOR,
-#    fss.constants.PC_FILTER,
     fss.constants.PC_EXECUTOR,
 ]
