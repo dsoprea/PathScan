@@ -1,0 +1,105 @@
+#!/usr/bin/env python3
+
+import argparse
+
+import fss
+import fss.constants
+import fss.config.log
+import fss.orchestrator
+
+def _parse_args():
+    description = "Recursively scan a path given zero or more filters and print " \
+                  "the results."
+
+    parser = argparse.ArgumentParser(description=description)
+
+    parser.add_argument('root_path',
+                        help='Path')
+
+    parser.add_argument('-i', '--include-file-pattern', 
+                        action='append',
+                        help='Pattern of files to include')
+
+    parser.add_argument('-e', '--exclude-file-pattern', 
+                        action='append',
+                        help='Pattern of files to exclude')
+
+    parser.add_argument('-id', '--include-directory-pattern', 
+                        action='append',
+                        help='Pattern of directories to include')
+
+    parser.add_argument('-ed', '--exclude-directory-pattern', 
+                        action='append',
+                        help='Pattern of directories to exclude')
+
+    parser.add_argument('-v', '--verbose', 
+                        action='store_true',
+                        help='Be verbose')
+
+    args = parser.parse_args()
+
+    return args
+
+def _build_rules(args):
+    filter_rules = []
+
+    if args.include_file_pattern:
+        for pattern in args.include_file_pattern:
+            filter_rules.append((
+                fss.constants.FT_FILE, 
+                fss.constants.FILTER_INCLUDE, 
+                pattern))
+
+            if args.verbose is True:
+                print("INCLUDE FILES: %s" % (pattern,))
+
+    if args.exclude_file_pattern:
+        for pattern in args.exclude_file_pattern:
+            filter_rules.append((
+                fss.constants.FT_FILE, 
+                fss.constants.FILTER_EXCLUDE, 
+                pattern))
+
+            if args.verbose is True:
+                print("EXCLUDE FILES: %s" % (pattern,))
+
+    if args.include_directory_pattern:
+        for pattern in args.include_directory_pattern:
+            filter_rules.append((
+                fss.constants.FT_DIR, 
+                fss.constants.FILTER_INCLUDE, 
+                pattern))
+
+            if args.verbose is True:
+                print("INCLUDE DIRECTORIES: %s" % (pattern,))
+
+    if args.exclude_directory_pattern:
+        for pattern in args.exclude_directory_pattern:
+            filter_rules.append((
+                fss.constants.FT_DIR, 
+                fss.constants.FILTER_EXCLUDE, 
+                pattern))
+
+            if args.verbose is True:
+                print("EXCLUDE DIRECTORIES: %s" % (pattern,))
+
+    if filter_rules and args.verbose is True:
+        print('')
+
+    return filter_rules
+
+def _run(args, filter_rules):
+    o = fss.orchestrator.Orchestrator(args.root_path, filter_rules)
+    for (entry_type, entry_filepath) in o.recurse():
+        if entry_type == fss.constants.FT_DIR:
+            print("D %s" % (entry_filepath,))
+        else: # entry_type == fss.constants.FT_FILE:
+            print("F %s" % (entry_filepath,))
+
+def _main():
+    args = _parse_args()
+    filter_rules = _build_rules(args)
+    _run(args, filter_rules)
+
+if __name__ == '__main__':
+    _main()

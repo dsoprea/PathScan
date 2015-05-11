@@ -24,7 +24,7 @@ setuptools.setup(
     keywords='filesystem file search scanner',
     author='Dustin Oprea',
     author_email='myselfasunder@gmail.com',
-#    url='https://github.com/dsoprea/PyInotify',
+    url='https://github.com/dsoprea/PathScan',
     license='GPL 2',
     packages=setuptools.find_packages(exclude=['dev']),
     include_package_data=True,
@@ -35,5 +35,8 @@ setuptools.setup(
             'resources/README.rst',
             'resources/requirements.txt',
         ]
-    }
+    },
+    scripts=[
+        'fss/resources/scripts/pathscan',
+    ],
 )
