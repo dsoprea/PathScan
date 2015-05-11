@@ -7,6 +7,9 @@ The searching is done asynchronously from another process. This way, the searchi
 Usage
 -----
 
+As Library
+==========
+
 Example:
 
 .. code-block:: python
@@ -40,7 +43,22 @@ Output::
     File: [/etc/init/network-interface-security.conf]
     File: [/etc/init/network-interface.conf]
 
-Notice that we include directories named "init" but that we'll still see matching files from the root-path.
+Notice that even though we only include directories named "init" we'll still see matching files from the root-path.
+
+
+As Script
+=========
+
+You can also use *FSS* from the command-line. You'll get a printout of the results that you can consume and parse.
+
+Example::
+
+    $ pathscan -i "i*.h" -id php /usr/include 
+    F /usr/include/iconv.h
+    F /usr/include/ifaddrs.h
+    F /usr/include/inttypes.h
+    F /usr/include/iso646.h
+    D /usr/include/php
 
 
 ------------
