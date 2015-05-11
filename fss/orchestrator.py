@@ -49,12 +49,8 @@ class Orchestrator(object):
 
         # Loop while any of the components is still running (but only check 
         # when all components have been started).
-        while True:
-            states = [v for (k, v) in pipeline_state.items() if k.startswith('running_')]
-            if all([s >= fss.constants.PCS_STOPPED for s in states]) is True:
-                _LOGGER.info("Worker has terminated. Stopping loop.")
-                break
-
+        keep_running = True
+        while keep_running is True:
             # Yield any results.
 
             i = 0
@@ -67,6 +63,8 @@ class Orchestrator(object):
                     if issubclass(
                             entry.__class__, 
                             fss.workers.worker_base.TerminationMessage) is True:
+
+                        keep_running = False
                         break
 
                     (entry_type, entry_filepath) = entry
