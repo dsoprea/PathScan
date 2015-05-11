@@ -1,0 +1,1 @@
+fss/resources/README.rst
