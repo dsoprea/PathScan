@@ -1,1 +1,3 @@
 *.pyc
+/vagrant/.vagrant
+/fsscanner.egg-info/
