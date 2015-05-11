@@ -6,7 +6,7 @@ import sys
 _APP_PATH = os.path.abspath(os.path.join(os.path.dirname(__file__), '..'))
 sys.path.insert(0, _APP_PATH)
 
-os.environ['FSS_DEBUG_LOG'] = '1'
+#os.environ['FSS_DEBUG_LOG'] = '1'
 
 import fss.constants
 import fss.config.log
@@ -30,12 +30,10 @@ filter_rules = [
     (fss.constants.FT_FILE, fss.constants.FILTER_EXCLUDE, '*.py'),
 ]
 
-def file_handler(entry_type, entry_filepath):
-    print("FOUND: [%s] [%s]" % (entry_type, entry_filepath))
-
 print("Starting.")
 
-o = fss.orchestrator.Orchestrator(path, filter_rules, file_handler)
-o.run()
+o = fss.orchestrator.Orchestrator(path, filter_rules)
+for (entry_type, entry_filepath) in o.recurse():
+    print("FOUND: [%s] [%s]" % (entry_type, entry_filepath))
 
 print("Stopping.")

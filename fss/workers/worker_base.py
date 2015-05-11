@@ -7,7 +7,7 @@ import fss.config.workers
 _LOGGER = logging.getLogger(__name__)
 
 
-class _TerminationMessage(object):
+class TerminationMessage(object):
     pass
 
 # TODO(dustin): We might want to improve our tick-countting... Maybe have 
@@ -155,7 +155,7 @@ class WorkerBase(object):
 
                 continue
 
-            if issubclass(item.__class__, _TerminationMessage) is True:
+            if issubclass(item.__class__, TerminationMessage) is True:
                 upstream_component_name = self.get_upstream_component_name()
 
                 _LOGGER.info("Component [%s] received termination message"
@@ -195,7 +195,7 @@ class WorkerBase(object):
 
         self.wait_for_log_empty()
 
-        self.__output_q.put(_TerminationMessage())
+        self.__output_q.put(TerminationMessage())
 
         self.__set_state(fss.constants.PCS_STOPPED)
 

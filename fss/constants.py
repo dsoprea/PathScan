@@ -6,8 +6,6 @@ FT_FILE = 'file'
 # Pipeline components.
 
 PC_GENERATOR = 'generator'
-#PC_FILTER = 'filter'
-PC_EXECUTOR = 'executor'
 
 # Pipeline component states.
 

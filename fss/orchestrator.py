@@ -7,18 +7,17 @@ import threading
 import fss.config.general
 import fss.config.workers
 import fss.workers.generator
-import fss.workers.executor
+import fss.workers.worker_base
 
 _LOGGER = logging.getLogger(__name__)
 
 
 class Orchestrator(object):
-    def __init__(self, path, filter_rules, fq_handler_cls_name):
+    def __init__(self, path, filter_rules):
         self.__path = path
         self.__filter_rules = filter_rules
-        self.__fq_handler_cls_name = fq_handler_cls_name
 
-    def run(self):
+    def recurse(self):
         _LOGGER.info("Orchestrator running.")
 
         log_q = multiprocessing.Queue()
@@ -27,9 +26,9 @@ class Orchestrator(object):
         # states.
         m = multiprocessing.Manager()
         pipeline_state = m.dict({
-                                'running_' + fss.constants.PC_GENERATOR: fss.constants.PCS_INITIAL,
-                                'running_' + fss.constants.PC_EXECUTOR: fss.constants.PCS_INITIAL,
-                            })
+            ('running_' + fss.constants.PC_GENERATOR): 
+                fss.constants.PCS_INITIAL,
+        })
 
         # Create the generator.
 
@@ -42,18 +41,9 @@ class Orchestrator(object):
                 generator_input_q,
                 log_q)
 
-        # Create the executor.
-
-        e = fss.workers.executor.ExecutorController(
-                self.__fq_handler_cls_name,
-                pipeline_state, 
-                g.output_q, 
-                log_q)
-
         # Start the pipeline.
 
         g.start()
-        e.start()
 
         # Start foreground loop.
 
@@ -61,22 +51,40 @@ class Orchestrator(object):
         # when all components have been started).
         while True:
             states = [v for (k, v) in pipeline_state.items() if k.startswith('running_')]
-            if min(states) >= fss.constants.PCS_STOPPED:
+            if all([s >= fss.constants.PCS_STOPPED for s in states]) is True:
+                _LOGGER.info("Worker has terminated. Stopping loop.")
                 break
 
-# TODO(dustin): Check for any of the components not being alive.
+            # Yield any results.
+
+            i = 0
+            while i < fss.config.general.MAX_RESULT_BATCH_READ_COUNT:
+                try:
+                    entry = g.output_q.get(block=False)
+                except queue.Empty:
+                    break
+                else:
+                    if issubclass(
+                            entry.__class__, 
+                            fss.workers.worker_base.TerminationMessage) is True:
+                        break
+
+                    (entry_type, entry_filepath) = entry
+                    yield (entry_type, entry_filepath)
+
+                i += 1
 
             # Forward log messages to local log-handler.
 
-            try:
-                (cls_name, level, message) = log_q.get(timeout=fss.config.general.LOG_READ_BLOCK_TIMEOUT_S)
-            except queue.Empty:
-                #_LOGGER.debug("No log messages.")
-                pass
-            else:
-                _LOGGER.log(level, cls_name + ": " + message)
+            j = 0
+            while j < fss.config.general.MAX_LOG_BATCH_READ_COUNT:
+                try:
+                    (cls_name, level, message) = log_q.get(block=False)
+                except queue.Empty:
+                    break
+                else:
+                    _LOGGER.log(level, cls_name + ": " + message)
 
-        _LOGGER.info("Terminating workers.")
+        _LOGGER.info("Terminating worker.")
 
-        e.stop()
         g.stop()
