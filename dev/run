@@ -6,34 +6,24 @@ import sys
 _APP_PATH = os.path.abspath(os.path.join(os.path.dirname(__file__), '..'))
 sys.path.insert(0, _APP_PATH)
 
-#os.environ['FSS_DEBUG_LOG'] = '1'
+#import os
+#os.environ['FSS_DEBUG'] = '1'
 
 import fss.constants
 import fss.config.log
 import fss.orchestrator
 
-#path = os.path.expanduser('~/Documents')
-#path = os.path.expanduser('/Volumes/tower/images')
-path = os.path.expanduser('~/development/python')
+root_path = '/etc'
 
 filter_rules = [
-#    (fss.constants.FT_FILE, fss.constants.FILTER_INCLUDE, '*.MP4'),
-
-#    (fss.constants.FT_DIR, fss.constants.FILTER_INCLUDE, '*234*'),
-
-#    (fss.constants.FT_DIR, fss.constants.FILTER_INCLUDE, 'main'),
-#    (fss.constants.FT_DIR, fss.constants.FILTER_INCLUDE, '2014'),
-#    (fss.constants.FT_DIR, fss.constants.FILTER_INCLUDE, '*123*'),
-
-    (fss.constants.FT_DIR, fss.constants.FILTER_INCLUDE, 'deployment'),
-    (fss.constants.FT_DIR, fss.constants.FILTER_INCLUDE, 'deploy_pipe'),
-    (fss.constants.FT_FILE, fss.constants.FILTER_EXCLUDE, '*.py'),
+    (fss.constants.FT_DIR, fss.constants.FILTER_INCLUDE, 'init'),
+    (fss.constants.FT_FILE, fss.constants.FILTER_INCLUDE, 'net*'),
+    (fss.constants.FT_FILE, fss.constants.FILTER_EXCLUDE, 'networking.conf'),
 ]
 
-print("Starting.")
-
-o = fss.orchestrator.Orchestrator(path, filter_rules)
+o = fss.orchestrator.Orchestrator(root_path, filter_rules)
 for (entry_type, entry_filepath) in o.recurse():
-    print("FOUND: [%s] [%s]" % (entry_type, entry_filepath))
-
-print("Stopping.")
+    if entry_type == fss.constants.FT_DIR:
+        print("Directory: [%s]" % (entry_filepath,))
+    else: # entry_type == fss.constants.FT_FILE:
+        print("File: [%s]" % (entry_filepath,))
