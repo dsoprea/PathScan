@@ -2,7 +2,7 @@ import multiprocessing
 import time
 import logging
 import queue
-import os.path
+import os
 import fnmatch
 import pprint
 
@@ -15,7 +15,13 @@ import fss.workers.worker_base
 _LOGGER = logging.getLogger(__name__)
 
 _LOGGER_FILTER = logging.getLogger(__name__ + '.-filter–')
-_LOGGER_FILTER.setLevel(logging.INFO)
+
+_IS_FILTER_DEBUG = bool(int(os.environ.get('FSS_FILTER_DEBUG', '0')))
+
+if _IS_FILTER_DEBUG is True:
+    _LOGGER_FILTER.setLevel(logging.DEBUG)
+else:
+    _LOGGER_FILTER.setLevel(logging.WARNING)
 
 
 class GeneratorWorker(fss.workers.worker_base.WorkerBase):
