@@ -4,13 +4,18 @@ import logging
 import queue
 import os.path
 import fnmatch
+import pprint
 
 import fss.constants
+import fss.config
 import fss.config.workers
 import fss.workers.controller_base
 import fss.workers.worker_base
 
 _LOGGER = logging.getLogger(__name__)
+
+_LOGGER_FILTER = logging.getLogger(__name__ + '.-filter–')
+_LOGGER_FILTER.setLevel(logging.INFO)
 
 
 class GeneratorWorker(fss.workers.worker_base.WorkerBase):
@@ -28,6 +33,7 @@ class GeneratorWorker(fss.workers.worker_base.WorkerBase):
 
         self.__filter_rules = None
         self.__load_filter_rules(filter_rules_raw)
+        self.__local_input_q = queue.Queue()
 
     def __load_filter_rules(self, filter_rules_raw):
         _LOGGER.debug("Loading filter-rules.")
@@ -50,21 +56,25 @@ class GeneratorWorker(fss.workers.worker_base.WorkerBase):
         for (entry_type, filter_type, pattern) in filter_rules_raw:
             self.__filter_rules[entry_type][filter_type].append(pattern)
 
-        # If an include filter was given for DIRECTORIES, but no exclude 
-        # filter, exclude everything but what hits on the include.
+        # If an include filter was given for DIRECTORIES, add an exclude filter 
+        # for "*". Since we check the include rules, first, we'll simply not be 
+        # implicitly including anything else.
 
         rules = self.__filter_rules[fss.constants.FT_DIR]
-        if rules[fss.constants.FILTER_INCLUDE] and \
-           not rules[fss.constants.FILTER_EXCLUDE]:
+        if rules[fss.constants.FILTER_INCLUDE]:
             rules[fss.constants.FILTER_EXCLUDE].append('*')
 
-        # If an include filter was given for FILES, but no exclude filter, 
-        # exclude everything but what hits on the include.
+        # If an include filter was given for FILES, add an exclude filter for
+        # "*". Since we check the include rules, first, we'll simply not be 
+        # implicitly including anything else.
 
         rules = self.__filter_rules[fss.constants.FT_FILE]
-        if rules[fss.constants.FILTER_INCLUDE] and \
-           not rules[fss.constants.FILTER_EXCLUDE]:
+        if rules[fss.constants.FILTER_INCLUDE]:
             rules[fss.constants.FILTER_EXCLUDE].append('*')
+
+        if fss.config.IS_DEBUG is True:
+            _LOGGER.debug("Final rules:\n%s", 
+                          pprint.pformat(self.__filter_rules))
 
     def __check_to_permit(self, entry_type, entry_filename):
         """Applying the filter rules."""
@@ -74,25 +84,46 @@ class GeneratorWorker(fss.workers.worker_base.WorkerBase):
         # Should explicitly include?
         for pattern in rules[fss.constants.FILTER_INCLUDE]:
             if fnmatch.fnmatch(entry_filename, pattern):
-                _LOGGER.debug("Entry explicitly INCLUDED: [%s] [%s] [%s]", 
-                              entry_type, pattern, entry_filename)
+                _LOGGER_FILTER.debug("Entry explicitly INCLUDED: [%s] [%s] "
+                                     "[%s]", 
+                                     entry_type, pattern, entry_filename)
 
                 return True
 
         # Should explicitly exclude?
         for pattern in rules[fss.constants.FILTER_EXCLUDE]:
             if fnmatch.fnmatch(entry_filename, pattern):
-                _LOGGER.debug("Entry explicitly EXCLUDED: [%s] [%s] [%s]", 
-                              entry_type, pattern, entry_filename)
+                _LOGGER_FILTER.debug("Entry explicitly EXCLUDED: [%s] [%s] "
+                                     "[%s]", 
+                                     entry_type, pattern, entry_filename)
 
                 return False
 
         # Implicitly include.
 
-        _LOGGER.debug("Entry IMPLICITLY included: [%s] [%s]", 
-                      entry_type, entry_filename)
+        _LOGGER_FILTER.debug("Entry IMPLICITLY included: [%s] [%s]", 
+                             entry_type, entry_filename)
 
         return True
+
+    def get_next_item(self):
+        """Override the default functionality to not only try to pull things 
+        off the external input-queue, but to first try to pull things from a 
+        local input-queue that we'll primarily depend on. We'll only use the 
+        external input-queue to get the initial root-path (we could reuse it to 
+        do the recursion, but it's more costly and prone to delay).
+        """
+
+        # Try to pop something off the local input-queue.
+
+        try:
+            return self.__local_input_q.get(block=False)
+        except queue.Empty:
+            pass
+
+        # Try to pop something off the external input-queue.
+
+        return self.input_q.get(block=False)
 
     def process_item(self, entry_path):
         _LOGGER.debug("Processing: [%s]", entry_path)
@@ -111,42 +142,48 @@ class GeneratorWorker(fss.workers.worker_base.WorkerBase):
         else:
             self.__processed_first = True
 
-        for filename in os.listdir(entry_path):
-            if self.check_quit() is True:
-                _LOGGER.warning("Generator has been told to quit before "
-                                "finishing. WITHIN=[%s]", entry_path)
+        try:
+            entries = os.listdir(entry_path)
+        except:
+            _LOGGER.exception("Skipping unreadable directory: [%s]", 
+                              entry_path)
+        else:
+            for filename in entries:
+                if self.check_quit() is True:
+                    _LOGGER.warning("Generator has been told to quit before "
+                                    "finishing. WITHIN=[%s]", entry_path)
 
-                return False
+                    return False
 
-            filepath = os.path.join(entry_path, filename)
-            is_dir = os.path.isdir(filepath)
+                filepath = os.path.join(entry_path, filename)
+                is_dir = os.path.isdir(filepath)
 
-            file_type = fss.constants.FT_DIR \
-                            if is_dir is True \
-                            else fss.constants.FT_FILE
+                file_type = fss.constants.FT_DIR \
+                                if is_dir is True \
+                                else fss.constants.FT_FILE
 
-            if self.__check_to_permit(file_type, filename) is False:
-                continue
+                if self.__check_to_permit(file_type, filename) is False:
+                    continue
 
-            if self.tick_count % \
-                    fss.config.workers.PROGRESS_LOG_TICK_INTERVAL == 0:
-                self.log(
-                    logging.DEBUG, 
-                    "Generator progress: (%d)", 
-                    self.tick_count)
+                if self.tick_count % \
+                        fss.config.workers.PROGRESS_LOG_TICK_INTERVAL == 0:
+                    self.log(
+                        logging.DEBUG, 
+                        "Generator progress: (%d)", 
+                        self.tick_count)
 
-            # We'll populate our own input-queue with downstream paths.
-            if is_dir:
-                self.push_to_output((fss.constants.FT_DIR, filepath))
-                
-                _LOGGER.debug("Pushing directory to input-queue: [%s]", 
-                              filepath)
+                # We'll populate our own input-queue with downstream paths.
+                if is_dir:
+                    self.push_to_output((fss.constants.FT_DIR, filepath))
+                    
+                    _LOGGER.debug("Pushing directory to local input-queue: "
+                                  "[%s]", filepath)
 
-                self.input_q.put(filepath)
-            else:
-                self.push_to_output((fss.constants.FT_FILE, filepath))
+                    self.__local_input_q.put(filepath)
+                else:
+                    self.push_to_output((fss.constants.FT_FILE, filepath))
 
-            self.increment_tick()
+                self.increment_tick()
 
     def get_component_name(self):
         return fss.constants.PC_GENERATOR

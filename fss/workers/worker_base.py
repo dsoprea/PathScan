@@ -135,6 +135,9 @@ class WorkerBase(object):
 
         self.__tick += 1
 
+    def get_next_item(self):
+        return self.input_q.get(block=False)
+
     def run(self):
         component_name = self.get_component_name()
 
@@ -146,7 +149,7 @@ class WorkerBase(object):
         
         while True:
             try:
-                item = self.input_q.get(block=False)
+                item = self.get_next_item()
             except queue.Empty:
                 _LOGGER.debug("Input-queue is empty: [%s]", component_name)
 
