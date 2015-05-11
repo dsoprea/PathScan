@@ -2,6 +2,11 @@
 
 The searching is done asynchronously from another process. This way, the searching and whatever you're doing with the results may potentially run in parallel.
 
+
+-----
+Usage
+-----
+
 Example::
 
     import fss.constants
@@ -34,3 +39,19 @@ Output::
     File: [/etc/init/network-interface.conf]
 
 Notice that we include directories named "init" but that we'll still see matching files from the root-path.
+
+
+------------
+Requirements
+------------
+
+- Python 3.4
+
+
+------------
+Installation
+------------
+
+PyPI::
+
+    $ sudo pip3 install filegen
