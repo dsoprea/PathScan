@@ -13,7 +13,7 @@ DEFAULT_FORMAT_STRING = '%(asctime)s - %(name)s - %(levelname)s - %(message)s'
 if IS_DEBUG_LOG is True:
     _LOGGER.setLevel(logging.DEBUG)
 else:
-    _LOGGER.setLevel(logging.INFO)
+    _LOGGER.setLevel(logging.WARNING)
 
 def configure_handler(logger, h):
     formatter = logging.Formatter(DEFAULT_FORMAT_STRING)
