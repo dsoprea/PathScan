@@ -1,5 +1,5 @@
 *.pyc
 /vagrant/.vagrant
-/fsscanner.egg-info/
+/pathscan.egg-info/
 /build
 /dist

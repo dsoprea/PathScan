@@ -15,7 +15,7 @@ _DESCRIPTION = \
     "Search a filesystem using zero or more file and directory filters."
 
 setuptools.setup(
-    name='filegen',
+    name='pathscan',
     version=fss.__version__,
     description=_DESCRIPTION,
     long_description=_LONG_DESCRIPTION,

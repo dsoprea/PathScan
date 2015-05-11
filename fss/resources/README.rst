@@ -7,7 +7,9 @@ The searching is done asynchronously from another process. This way, the searchi
 Usage
 -----
 
-Example::
+Example:
+
+.. code-block:: python
 
     import fss.constants
     import fss.config.log
@@ -27,7 +29,7 @@ Example::
             print("Directory: [%s]" % (entry_filepath,))
         else: # entry_type == fss.constants.FT_FILE:
             print("File: [%s]" % (entry_filepath,))
-
+    
 Output::
 
     Directory: [/etc/init]
@@ -54,4 +56,4 @@ Installation
 
 PyPI::
 
-    $ sudo pip3 install filegen
+    $ sudo pip3 install pathscan
