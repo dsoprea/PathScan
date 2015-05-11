@@ -1,6 +1,6 @@
-*FSS* will scan a given directory for matching files and yield results as a generator. You may provide a list of include/exclude rules for files and/or directories. 
+*FSS* will recursively scan the given directory for matching files and yield results as a generator. You may provide a list of include/exclude rules for files and/or directories. 
 
-The searching is done, asynchronously, from another process. This way, the searching and whatever you're doing with the results may actual run in parallel.
+The searching is done asynchronously from another process. This way, the searching and whatever you're doing with the results may potentially run in parallel.
 
 Example::
 
